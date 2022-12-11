@@ -292,7 +292,7 @@
 
 
 
-## 数据类型
+## 二 数据类型
 
 
 ### 2.1 概述
@@ -372,9 +372,170 @@ null最初1995第一版中没有 只当作object的一种特殊值，后来null�
 
 
 
+## 七 异步操作
+
+### 7.1 概述
+1. 单线程模型
+    js在单线程上运行 早期是避免浏览器太复杂 避开共享资源 资源锁问题  
+    优点：实现简单  
+    缺点：重任务会拖累相应时间 导致页面和渲染卡顿  
+      js本身不慢 慢的是读写外部数据 io 网络收发  
+    注意：js引擎是多线程的
+
+    * 事件循环机制：为了加快执行速度 避免等待io 先执行队列后续任务  
+    * web worker：h5扩展的多线程功能 创建多个子线程 但不能操作dom  
+            只有部分功能 比如：并行运算
+
+2. 同步和异步任务
+    同步任务：不会被引擎挂起 顺序执行 等前一个执行完毕  
+    异步任务：执行后被引擎挂起 继续后续任务 等待某个时机 采用回调函数方式重新激活进入主线程执行  
+
+3. 任务队列和事件循环
+    js主线程运行同步任务 引擎同时维护了多个异步任务队列(根据类型)  
+    单同步任务执行完毕时 会去检查异步队列 若满足条件 就转移的到同步任务中执行(通过回调函数方式 若无回调也不会进入异步任务)  
+    这个不断检测的过程就叫事件循环
+
+4. 异步操作的模式
+    * 4.1 回调函数
+        优点：主流程清晰 简单
+        缺点：高耦合 多嵌套易使程序结构混乱
+    * 4.2 事件监听
+        优点：弱耦合 易理解 可多个回调  
+        缺点：运行流程不清晰 难以看出主流程  
+    * 4.3 发布/订阅 (观察者模式)
+        事件的特殊版本 有个中心负责订阅和转发  
+        优点：通过查看中心 统计多个信号 多少订阅者 方便监控程序  
+        缺点：容易让中心功能变得很杂 数量多了也有性能问题  
+
+5. 异步操作的流程控制  
+    * 5.1 多个异步串行执行 总时间不变  
+        用一个数组存参数 另一个数组存结果  
+        每次执行数组shfit一次 直到为空 表示结束 
+    * 5.2 并行执行 时间取最长者  
+        一次全部执行 还是通过收集回调的方式 来判断是否结束  
+    * 5.3 并行和串行结合 设置最大并行数 防止占用太多资源
+
+### 7.2 定时器
+1. setTimeout(f, time, ...args)
+    n毫秒后执行(默认0秒) 返回定时器id  
+    可传回调函数的参数  
+    注意：函数执行的环境是全局环境 可通过bind解决
+
+2. setInterval
+    使用同上 无限次执行  
+    注意：时间按本次执行开始计算 若函数本身占用的时间比较多  
+    则下次执行速度会加快 可通过结束时调用wetTimeout来保证   
+    两次执行的时间间隔  
+
+3. clearTimeout clearInterval
+4. 案例：debounce函数 防抖动 用定时器限制连续执行的节奏 
+5. 运行机制    
+    移到异步任务中 等待本轮同步任务执行完毕 下一轮事件循环前期 再开始判断  
+
+6. setTimeout(f,0)
+   * 6.1 含义：本轮同步任务结束后执行  
+        实际不止0ms 比如edge充电时16ms 非当前tab 1000ms  
+    * 6.2 应用：调整顺序 尤其在事件链上  
+            分批执行 尤其改变dom元素 
 
 
 
+### 7.3 Promise对象
+
+1. 概述
+    js的异步解决方案 统一异步操作接口 起到异步与回调的中介代理作用  
+    设计思想：所有异步任务都返回一个Promise实例 每个实例都有一个then方法 来制定下一步的回调函数  
+    ```
+    new Promise(step1)
+        .then(step2)
+        .then(step3)
+    ```
+
+2. Promise对象的状态
+    3种状态：  
+    * pending 未完成
+    * fulfilled 成功
+    * rejected 失败
+    后两者合并就叫resolved已定型  
+    状态改变只有两种 一旦确定无法改变 只会发生一次
+
+3. Promise构造函数
+    成功：传回一个值  fulfilled
+    失败：抛出一个错误 rejected
+    ```
+    new Promise((resolve, reject) {
+        if (成功)
+            resolve(value)
+        else 
+            reject(new Error())
+    })
+    ```
+
+4. Promise.prototype.then()
+    成功和失败的两个回调  
+
+    ```
+    p.then(console.log, console.error)
+    ```
+    then链：状态会往后传递
+5. then()用法
+    ```
+    p.then(function () {
+        return f2()
+    }).then(console.log)  得到f2的返回值
+
+    p.then(function () {
+        return f2()
+    }).then(console.log)  得到undefined
+
+    p.then(f2()).then(console.log) 得到f2的返回值
+
+    p.then(f2).then(console.log)  f2会得到p中resolve值
+    ```
+
+6. 实例：图片加载
+    ```
+    var preloadImage = function (path) {
+    return new Promise(function (resolve, reject) {
+        var image = new Image();
+        image.onload  = resolve;
+        image.onerror = reject;
+        image.src = path;
+    });
+    };
+
+    preloadImage('https://example.com/my.jpg')
+        .then(function (e) { document.body.append(e.target) })
+        .then(function () { console.log('加载成功') })
+    ```
+
+7. 小结
+    优点：回调转为规范的链式写法 流程更清晰  
+        状态缺点后永不改变 任何时候都可再次then获得调用  
+        不会像事件一样错过发送的时机  
+    缺点：写法 理解 更难  
+
+8. 微任务
+    内部的所有回调都是异步任务 除了构造函数 立刻执行属于同步任务  
+    ```
+    new Promise(function (resolve, reject) {
+        log(1)
+        resolve(3);
+    }).then(console.log);  异步任务
+
+    console.log(2);
+    得到：1 2 3
+    ```
+    区别于普通异步 属于微任务microtask 在本轮事件循环 同步任务后执行
+    常规的异步在下一轮事件循环的开始执行
+
+9.  参考链接
+[Sebastian Porto](https://sporto.github.io/blog/2012/12/09/callbacks-listeners-promises/)
+[Rhys Brett-Bowen, Promises/A+ - understanding the spec through implementation](https://modernjavascript.blogspot.com/2013/08/promisesa-understanding-by-doing.html)
+[Marc Harter, Promise A+ Implementation](https://gist.github.com//wavded/5692344)
+[Bryan Klimt, What’s so great about JavaScript Promises?](https://blog.parseplatform.org/)
+[Jake Archibald, JavaScript Promises There and back again](https://web.dev/learn/)
+[Mikito Takada, 7. Control flow, Mixu's Node book](http://book.mixu.net/node/ch7.html)
 
 
 

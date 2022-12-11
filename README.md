@@ -1,9 +1,8 @@
-# h5日常学习记录
+# h5鏃ュ父瀛︿範璁板綍
 
-## JavaScript(ECMAScript5.1) 教程 
-[链接](https://wangdoc.com/javascript/)
-[笔记](https://github.com/sywoon/h5_diary/blob/master/es5.md)
-
+## JavaScript(ECMAScript5.1) 鏁欑▼ 
+[閾炬帴](https://wangdoc.com/javascript/)
+[绗旇](https://github.com/sywoon/h5_diary/blob/master/es5.md)
 
 
 
