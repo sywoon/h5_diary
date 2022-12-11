@@ -1,7 +1,7 @@
-# h5日常学习记录
+# h5鏃ュ父瀛︿範璁板綍
 
-## JavaScript(ECMAScript5.1) 教程 
-[链接](https://wangdoc.com/javascript/)
+## JavaScript(ECMAScript5.1) 鏁欑▼ 
+[閾炬帴](https://wangdoc.com/javascript/)
 
 
 
